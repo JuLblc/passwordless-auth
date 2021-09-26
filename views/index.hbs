@@ -1,18 +1,18 @@
 {{#if user}}
- <h2>You are now logged in.</h2>
+ <h2>You are now logged in 👍</h2>
  <form action="/logout" method="POST"> 
-    <button type="submit" id="logout">Log out</button>
+    <button class="button is-danger is-outlined" type="submit" id="logout">Log out</button>
  </form>
  {{else}}
-<h2>This is where you'll put your email to get a magic link.</h2>
+<h3 class="subtitle is-5">This is where you'll put your email to get a magic link.</h3>
 
-<form action="/login" method="POST"> 
+<form class="field" action="/login" method="POST"> 
   <div>
-    <label>
-      Enter your email address
-      <input type="email" name="email" id="email_address" />
+    <label class="label">
+      Email
+      <input class="input" type="email" name="email" id="email_address" placeholder="Email input" />
     </label>
   </div>
-  <button type="submit" id="submit_email">Get magic link</button>
+  <button class="button is-link" type="submit" id="submit_email">Get magic link</button>
 </form>
 {{/if}}
