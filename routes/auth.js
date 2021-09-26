@@ -37,7 +37,6 @@ function sendToken(email, id) {
 router.post("/login", (req, res) => {
 
   const email = req.body.email;
-  // console.log('SESSION =====> ', req.session);
 
   if (!email) {
     res.status(403);
@@ -48,10 +47,9 @@ router.post("/login", (req, res) => {
   }
 
   if (email) {
-    //ToDo: Check si Email Adress dans base
+    // Check si Email Adress dans base
     User.findOne({ email })
       .then(foundUser => {
-        // console.log('foundUser', foundUser)
         // => Si non, créer nouveau user
         if (!foundUser) {
           const newUser = new User({
@@ -61,16 +59,15 @@ router.post("/login", (req, res) => {
 
           newUser.save()
             .then(() => {
-              // console.log('newUser._id', newUser._id)
               sendToken(email, newUser._id)
-              res.status(200).json({ message: 'Un E-mail pour valider votre adresse vous a été envoyé.' })
+              res.status(200);
+              res.render('token-sent',{ message: 'Un E-mail pour valider votre adresse vous a été envoyé.' });
             })
             .catch(error => next(error));
           // => Si oui, recupérer iD
         } else {
-          console.log('foundUser._id', foundUser._id)
           sendToken(email, foundUser._id)
-          res.status(200).json({ message: 'Un E-mail pour valider votre adresse vous a été envoyé.' })
+          res.render('token-sent',{ message: 'Un E-mail pour vous connecter vous a été envoyé.' });
         }
       })
       .catch(error => next(error));
@@ -80,7 +77,6 @@ router.post("/login", (req, res) => {
 router.get("/authenticate", (req, res) => {
 
   const token = req.query.token;
-  console.log('SESSION =====> ', req.session);
 
   if (!token) {
     res.status(403);
@@ -114,9 +110,5 @@ router.post('/logout', (req, res) => {
   req.session.destroy();
   res.redirect('/');
 });
-
-router.get("/home", (req, res) => {
-  res.render('home');
-})
 
 module.exports = router;
