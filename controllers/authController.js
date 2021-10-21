@@ -1,18 +1,15 @@
-const express = require('express');
-const router = express.Router();
 const transporter = require('../configs/mailer')
 const jwt = require('jsonwebtoken')
 const SECRET_TOKEN = process.env.SECRET_TOKEN
 const User = require('../models/User.model');
 
 // Fonction utilitaire
-function sendToken(email, id) {
-  const token = jwt.sign({
-    "iss": "magiclink",
-    "exp": Math.floor(Date.now() / 1000) + (60 * 5), //Token expires in 5 minutes
-    "sub": id,
-    "nonce": Math.random().toString(36).substring(2, 15)
-  }, SECRET_TOKEN);
+function sendToken(email, id) { 
+
+  const maxAge = Math.floor(Date.now() / 1000) + (60 * 5); //Token expires in 5 minutes
+  const token = jwt.sign({ id }, SECRET_TOKEN, {
+    expiresIn:maxAge
+  });
 
   const option = {
     from: process.env.EMAIL_ADRESS,
@@ -34,8 +31,17 @@ function sendToken(email, id) {
   })
 }
 
-router.post("/login", (req, res) => {
+module.exports.getLogin = (req, res) => {
+  if (req.cookies.jwt){
+    res.redirect('/')
+  }
+  else {
+    res.render('login');
+  }
+}
 
+module.exports.postLogin = (req, res) => {
+  
   const email = req.body.email;
 
   if (!email) {
@@ -64,7 +70,7 @@ router.post("/login", (req, res) => {
               res.render('token-sent',{ message: 'Un E-mail pour valider votre adresse vous a été envoyé.' });
             })
             .catch(error => next(error));
-          // => Si oui, recupérer iD
+        // => Si oui, recupérer iD
         } else {
           sendToken(email, foundUser._id)
           res.render('token-sent',{ message: 'Un E-mail pour vous connecter vous a été envoyé.' });
@@ -72,10 +78,10 @@ router.post("/login", (req, res) => {
       })
       .catch(error => next(error));
   }
-});
+}
 
-router.get("/authenticate", (req, res) => {
-
+module.exports.authenticate = (req, res) => {
+  
   const token = req.query.token;
 
   if (!token) {
@@ -89,12 +95,12 @@ router.get("/authenticate", (req, res) => {
   if (token) {
     try {
       const decodedToken = jwt.verify(token, SECRET_TOKEN)
-      const _id = decodedToken.sub
+      const _id = decodedToken.id;
 
       User.findOne({ _id })
-        .then(foundUser => {
-          req.session.currentUser = foundUser
-          res.render('index',{user:req.session.currentUser})
+        .then((foundUser) => {         
+          res.cookie('jwt',token, { httpOnly:true, maxAge : Math.floor(Date.now() / 1000) + (60 * 5) }) //Cookie expires in 5 minutes
+          res.redirect('/');   
         })
         .catch(error => next(error));
     }
@@ -104,11 +110,9 @@ router.get("/authenticate", (req, res) => {
       });
     }
   }
-});
+}
 
-router.post('/logout', (req, res) => {
-  req.session.destroy();
+module.exports.logout = (req, res) => {
+  res.cookie('jwt','',{ maxAge: 1 });
   res.redirect('/');
-});
-
-module.exports = router;
+}
